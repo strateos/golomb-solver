@@ -1,0 +1,16 @@
+table.results-table {
+  margin: 110px 0px 0px 20px;
+}
+
+table.results-table td {
+  padding: 5px 20px;
+}
+
+/* Ruler component */
+.ruler {
+  margin: 20px 0px 0px 20px;
+}
+
+.ruler .mark {
+  transition: left 200ms linear;
+}
