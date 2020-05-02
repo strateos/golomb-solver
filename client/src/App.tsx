@@ -121,7 +121,14 @@ const App: React.SFC = () => {
           <button
             onClick={() => {
               setSolveStartTime(Date.now());
-              fetch(`${SERVER_URL}/solve?timeout=${validatedTimeout}&order=${validatedOrder}`);
+              fetch(
+                  `${SERVER_URL}/solve?timeout=${validatedTimeout}&order=${validatedOrder}`,
+                  {
+                    "mode": "no-cors" // _TODO_ loosen this up server side
+                  }
+              ).then((res) => {
+                console.log(`res: ${res}`);
+              });
             }}
           >
             Solve
