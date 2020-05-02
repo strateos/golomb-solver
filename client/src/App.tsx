@@ -31,7 +31,6 @@ const App: React.SFC = () => {
   const [solverState, setSolverState]       = useState(SolverStates.Idle);
   const [solution, setSolution]             = useState<Solution | undefined>(undefined);
   const [intermediate, setIntermediate]     = useState<Solution | undefined>(undefined);
-  const [objBound, setObjBound]             = useState<Number>(0);
   const [currentVars, setCurrentVars]       = useState<String>("");
   const [currentOrder, setCurrentOrder]     = useState<number | undefined>(undefined);
   const [orderHistory, setOrderHistory]     = useState<IOrderHistory>([]);
@@ -67,7 +66,6 @@ const App: React.SFC = () => {
         });
         break;
       case 'ObjBound':
-        setObjBound(data);
         setBoundHistory((existingHistory: IBoundHistory) => {
           const newHistory = [...existingHistory, { time: Date.now(), bound: data }];
           return newHistory;
@@ -154,10 +152,6 @@ const App: React.SFC = () => {
         </div>
         <table className="results-table">
           <tbody>
-            <tr>
-              <td>Bound:</td>
-              <td>{objBound}</td>
-            </tr>
             <tr>
               <td>Current:</td>
               <td>{currentVars}</td>
