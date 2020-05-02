@@ -32,14 +32,15 @@ object GolombRuler {
 
   // Messages sent over the result queue
   // TODO Better type safety. Also de-dup need of `name` field.
+  type Solution = Array[Double]
   trait Message
-  case class QueueMessage(name: String)                     extends Message
-  case class NewOrderMessage(name: String, data: Double)    extends Message
-  case class ObjBoundMessage(name: String, data: Double)    extends Message
-  case class PeriodicMessage(name: String, data: String)    extends Message
-  case class NewSolutionMessage(name: String, data: String) extends Message
-  case class EndSearch(name: String)                        extends Message
-  case class FinalMessage(name: String, data: String)       extends Message
+  case class QueueMessage(name: String)                         extends Message
+  case class NewOrderMessage(name: String, data: Double)        extends Message
+  case class ObjBoundMessage(name: String, data: Double)        extends Message
+  case class PeriodicMessage(name: String, data: String)        extends Message
+  case class NewSolutionMessage(name: String, data: Solution)   extends Message
+  case class EndSearch(name: String)                            extends Message
+  case class FinalMessage(name: String, data: Option[Solution]) extends Message
 
   /*
     The problem statement:
@@ -115,8 +116,8 @@ object GolombRuler {
           val bound = model.getObjBound()
           postMessage(ObjBoundMessage(name = "ObjBound", data = bound))
         } else if (i == IloCP.Callback.Solution) {
-          val markValues = marks.map(model.getValue(_)).sorted.mkString(", ")
-          postMessage(NewSolutionMessage(name = "NewSolution", data = markValues))
+          val marksArray = marks.map(model.getValue(_)).sorted
+          postMessage(NewSolutionMessage(name = "NewSolution", data = marksArray))
         } else if (i == IloCP.Callback.EndSearch) {
           postMessage(EndSearch(name = "EndSearch"))
         }
@@ -128,10 +129,10 @@ object GolombRuler {
     model.setParameter(IloCP.DoubleParam.TimeLimit, timeout)
     if (model.solve()) {
       marks.map(model.getValue(_)).sorted.foreach(println)
-      val solutionStr = marks.map(model.getValue(_)).sorted.mkString(", ")
-      postMessage(FinalMessage(name = "Final", data = solutionStr))
+      val marksArray = marks.map(model.getValue(_)).sorted
+      postMessage(FinalMessage(name = "Final", data = Some(marksArray)))
     } else {
-      postMessage(FinalMessage(name = "Final", data = "None"))
+      postMessage(FinalMessage(name = "Final", data = None))
     }
     model.end()
   }

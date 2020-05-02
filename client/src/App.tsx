@@ -19,6 +19,8 @@ type JsonPayload = {
   data: any;
 }
 
+type Solution = number[];
+
 // _TODO_ Detect current state of solver on load.
 const App: React.SFC = () => {
   /* Solver Inputs */
@@ -28,8 +30,8 @@ const App: React.SFC = () => {
   /* Solver state */
   const [solveStartTime, setSolveStartTime] = useState<number | undefined>(undefined);
   const [solverState, setSolverState]       = useState(SolverStates.Idle);
-  const [solution, setSolution]             = useState<string | undefined>(undefined);
-  const [intermediate, setIntermediate]     = useState<string | undefined>(undefined);
+  const [solution, setSolution]             = useState<Solution | undefined>(undefined);
+  const [intermediate, setIntermediate]     = useState<Solution | undefined>(undefined);
   const [objBound, setObjBound]             = useState<Number>(0);
   const [currentVars, setCurrentVars]       = useState<String>("");
   const [currentOrder, setCurrentOrder]     = useState<number | undefined>(undefined);
@@ -116,7 +118,7 @@ const App: React.SFC = () => {
     stateText = "Idle"
   }
 
-  const solutionForRuler: string | undefined = solution ? solution : intermediate;
+  const solutionForRuler = solution ? solution : intermediate;
 
   return (
     <div>
@@ -185,16 +187,13 @@ const App: React.SFC = () => {
   )
 }
 
-const Ruler: React.SFC<{solution: string}> = ({ solution }) => {
+const Ruler: React.SFC<{solution: number[]}> = ({ solution }) => {
   const width = 500;
   const height = 100;
   const markWidth = 3;
 
-  const marks: string[] = solution.split(',').map(s => s.trim());
-  const markInts: number[] = marks.map(m => parseInt(m, 10));
-
   let markMax = 0;
-  markInts.forEach(mark => {
+  solution.forEach(mark => {
     if (mark > markMax) markMax = mark;
   });
   const scale = width / markMax;
@@ -213,7 +212,7 @@ const Ruler: React.SFC<{solution: string}> = ({ solution }) => {
         borderBottom: '2px solid blue'
       }}
     >
-      {markInts.map((mark: number) => {
+      {solution.map((mark: number) => {
         return (
           <div
             style={{
