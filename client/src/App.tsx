@@ -27,7 +27,7 @@ const App: React.SFC = () => {
   const [intermediate, setIntermediate]     = useState<string | undefined>(undefined);
   const [objBound, setObjBound]             = useState<Number>(0);
   const [currentVars, setCurrentVars]       = useState<String>("n/a");
-  const [currentOrder, setCurrentOrder]     = useState<String>("n/a");
+  const [currentOrder, setCurrentOrder]     = useState<number | undefined>(undefined);
   const [orderHistory, setOrderHistory]     = useState<IOrderHistory>([]);
   const [boundHistory, setBoundHistory]     = useState<IBoundHistory>([]);
 
@@ -73,13 +73,13 @@ const App: React.SFC = () => {
         setSolverState(SolverStates.Searching);
         setIntermediate(undefined);
         setSolution(undefined);
-        setCurrentOrder('n/a');
+        setCurrentOrder(undefined);
         setOrderHistory([]);
         break;
       case 'NewOrder':
         setCurrentOrder(eventData);
         setOrderHistory((currHistory) => {
-          const newHistory = [...currHistory, { time: Date.now(), order: parseInt(eventData, 10) }];
+          const newHistory = [...currHistory, { time: Date.now(), order: eventData }];
           return newHistory;
         });
         break;

@@ -31,7 +31,7 @@ object GolombRuler {
   implicit val formats = org.json4s.DefaultFormats // for writing json
   trait Message
   case class QueueMessage(name: String) extends Message
-  case class NewOrderMessage(name: String, data: String) extends Message
+  case class NewOrderMessage(name: String, data: Double) extends Message
 
   /*
     The problem statement:
@@ -101,7 +101,7 @@ object GolombRuler {
           }
           val marksStr = current.sorted.mkString(", ")
           val currentOrder: Double = current.max(cmp = Ordering.Double)
-          postMessage(NewOrderMessage(name = "NewOrder", data = currentOrder.toString)) // TODO should send a number
+          postMessage(NewOrderMessage(name = "NewOrder", data = currentOrder))
           resultsQueue.offer(s"Periodic:$marksStr")
         } else if (i == IloCP.Callback.ObjBound) {
           val bound = model.getObjBound()
