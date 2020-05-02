@@ -82,6 +82,7 @@ object Server extends App {
       } ~ path("solve") {
         /**
          * Request to kick off a search for a golomb ruler of a particular order
+         * TODO This should really be a POST
          */
         get {
           parameters("order", "timeout") { (order, timeout) =>

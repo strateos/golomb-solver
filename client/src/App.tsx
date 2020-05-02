@@ -24,8 +24,8 @@ type Solution = number[];
 // _TODO_ Detect current state of solver on load.
 const App: React.SFC = () => {
   /* Solver Inputs */
-  const [timeoutText, setTimeoutText] = useState('30');
-  const [orderText, setOrderText]     = useState('5');
+  const [timeoutText, setTimeoutText] = useState('20'); // TODO number
+  const [orderText, setOrderText]     = useState('5');  // TODO number
 
   /* Solver state */
   const [solveStartTime, setSolveStartTime] = useState<number | undefined>(undefined);
@@ -145,50 +145,52 @@ const App: React.SFC = () => {
         </div>
         <div style={{ marginTop: 20, marginBottom: 20 }}>State: {stateText}</div>
       </div>
-      {solutionForRuler && (
-        <div>
-          <h5>Current Best Ruler</h5>
-          <Ruler solution={solutionForRuler} />
+      <div style={{ margin: '20px 0 0 20px' }}>
+        {solutionForRuler && (
+          <div>
+            <h5>Current Best Ruler</h5>
+            <Ruler solution={solutionForRuler} />
+          </div>
+        )}
+        <div style={{ marginTop: 20, display: 'flex', flexDirection: 'row' }}>
+          {(orderHistory.length > 0) && <OrderHistory orderHistory={orderHistory} />}
+          {(boundHistory.length > 0) && <BoundHistory boundHistory={boundHistory} />}
         </div>
-      )}
-      <div style={{ marginTop: 20, display: 'flex', flexDirection: 'row' }}>
-        {(orderHistory.length > 0) && <OrderHistory orderHistory={orderHistory} />}
-        {(boundHistory.length > 0) && <BoundHistory boundHistory={boundHistory} />}
+        <table className="results-table">
+          <tbody>
+            <tr>
+              <td>Start:</td>
+              <td>{solveStartTime || "n/a"}</td>
+            </tr>
+            <tr>
+              <td>Bound:</td>
+              <td>{objBound}</td>
+            </tr>
+            <tr>
+              <td>Current:</td>
+              <td>{currentVars}</td>
+            </tr>
+            <tr>
+              <td>Order:</td>
+              <td>{currentOrder}</td>
+            </tr>
+            <tr>
+              <td>Intermediate:</td>
+              <td>{intermediate || "n/a"}</td>
+            </tr>
+            <tr>
+              <td>Result:</td>
+              <td>{solution || "n/a"}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <table className="results-table">
-        <tbody>
-          <tr>
-            <td>Start:</td>
-            <td>{solveStartTime || "n/a"}</td>
-          </tr>
-          <tr>
-            <td>Bound:</td>
-            <td>{objBound}</td>
-          </tr>
-          <tr>
-            <td>Current:</td>
-            <td>{currentVars}</td>
-          </tr>
-          <tr>
-            <td>Order:</td>
-            <td>{currentOrder}</td>
-          </tr>
-          <tr>
-            <td>Intermediate:</td>
-            <td>{intermediate || "n/a"}</td>
-          </tr>
-          <tr>
-            <td>Result:</td>
-            <td>{solution || "n/a"}</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   )
 }
 
 const Ruler: React.SFC<{solution: number[]}> = ({ solution }) => {
-  const width = 500;
+  const width = 800;
   const height = 100;
   const markWidth = 3;
 

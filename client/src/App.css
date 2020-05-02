@@ -12,5 +12,5 @@ table.results-table td {
 }
 
 .ruler .mark {
-  transition: left 200ms linear;
+  transition: left 500ms linear;
 }
