@@ -50,11 +50,13 @@ const App: React.SFC = () => {
     const { name, data } = message;
     switch (name) {
       case 'StartSearch':
-        setSolverState(SolverStates.Searching);
-        setIntermediate(undefined);
-        setSolution(undefined);
-        setCurrentOrder(undefined);
-        setOrderHistory([]);
+        setSolverState(SolverStates.Searching); // Start search state
+                                                //
+        setIntermediate(undefined);             // Reset to initial value
+        setSolution(undefined);                 // |
+        setCurrentOrder(undefined);             // |
+        setOrderHistory([]);                    // |
+        setBoundHistory([]);                    // |
         break;
       case 'NewOrder':
         setCurrentOrder(data);
