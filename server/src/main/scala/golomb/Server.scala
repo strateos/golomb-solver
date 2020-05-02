@@ -60,24 +60,31 @@ object Server extends App {
           sys.error("Internal Server Error")
         }
       } ~ path("solve") {
+        /**
+         * Request to kick off a search for a golomb ruler of a particular order
+         */
         get {
           parameters("order", "timeout") { (order, timeout) =>
             val validatedOrder = order.toInt
+            val validatedTimeout = timeout.toInt
             if (validatedOrder <= 0) {
               complete(HttpResponse(BadRequest, entity = "'order' must be non negative integer"))
-              return
-            }
-            val validatedTimeout = timeout.toInt
-            if (validatedTimeout <= 0) {
+            } else if (validatedTimeout <= 0) {
               complete(HttpResponse(BadRequest, entity = "'timeout' must be non negative integer"))
-              return
+            } else {
+              golombActor ! StartSolve(validatedOrder, timeout.toInt)
+              complete(
+                HttpEntity(
+                  ContentTypes.`application/json`,
+                  "{\"status\": \"solving\"}"
+                )
+              )
             }
-            golombActor ! StartSolve(validatedOrder, timeout.toInt)
-            complete(HttpEntity(ContentTypes.`application/json`, "{\"status\": \"solving\"}"))
           }
         }
       } ~ path("wstest0") {
         get {
+          // Just a fun test of how web sockets work
           extractUpgradeToWebSocket { upgrade =>
             val numbers = Source(1 to 10).map(i => TextMessage(i.toString))
             complete(upgrade.handleMessagesWithSinkSource(Sink.ignore, numbers))

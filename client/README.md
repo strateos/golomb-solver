@@ -1,3 +1,12 @@
+# Golomb Solver Client
+This application displays metrics about solving a Golomb Ruler using constraint programming.
+
+## Roadmap
+- [] The state mgmt is pretty cludgy still
+- [] Get rid of layout jank when charts appear for the first time
+
+## Usage
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
