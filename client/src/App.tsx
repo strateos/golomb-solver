@@ -24,11 +24,10 @@ type Solution = number[];
 // _TODO_ Detect current state of solver on load.
 const App: React.SFC = () => {
   /* Solver Inputs */
-  const [timeoutText, setTimeoutText] = useState('20'); // TODO number
+  const [timeoutText, setTimeoutText] = useState('15'); // TODO number
   const [orderText, setOrderText]     = useState('5');  // TODO number
 
   /* Solver state */
-  const [solveStartTime, setSolveStartTime] = useState<number | undefined>(undefined);
   const [solverState, setSolverState]       = useState(SolverStates.Idle);
   const [solution, setSolution]             = useState<Solution | undefined>(undefined);
   const [intermediate, setIntermediate]     = useState<Solution | undefined>(undefined);
@@ -134,10 +133,7 @@ const App: React.SFC = () => {
         <div>
           <button
             onClick={() => {
-              setSolveStartTime(Date.now());
-              fetch(
-                `${SERVER_URL}/solve?timeout=${validatedTimeout}&order=${validatedOrder}`
-              )
+              fetch(`${SERVER_URL}/solve?timeout=${validatedTimeout}&order=${validatedOrder}`)
             }}
           >
             Solve
@@ -158,10 +154,6 @@ const App: React.SFC = () => {
         </div>
         <table className="results-table">
           <tbody>
-            <tr>
-              <td>Start:</td>
-              <td>{solveStartTime || "n/a"}</td>
-            </tr>
             <tr>
               <td>Bound:</td>
               <td>{objBound}</td>
