@@ -29,9 +29,17 @@ object GolombRuler {
 
   // Setup for sending json payloads over the queue
   implicit val formats = org.json4s.DefaultFormats // for writing json
+
+  // Messages sent over the result queue
+  // TODO Better type safety. Also de-dup need of `name` field.
   trait Message
-  case class QueueMessage(name: String) extends Message
-  case class NewOrderMessage(name: String, data: Double) extends Message
+  case class QueueMessage(name: String)                     extends Message
+  case class NewOrderMessage(name: String, data: Double)    extends Message
+  case class ObjBoundMessage(name: String, data: Double)    extends Message
+  case class PeriodicMessage(name: String, data: String)    extends Message
+  case class NewSolutionMessage(name: String, data: String) extends Message
+  case class EndSearch(name: String)                        extends Message
+  case class FinalMessage(name: String, data: String)       extends Message
 
   /*
     The problem statement:
@@ -102,20 +110,15 @@ object GolombRuler {
           val marksStr = current.sorted.mkString(", ")
           val currentOrder: Double = current.max(cmp = Ordering.Double)
           postMessage(NewOrderMessage(name = "NewOrder", data = currentOrder))
-          resultsQueue.offer(s"Periodic:$marksStr")
+          postMessage(PeriodicMessage(name = "Periodic", data = marksStr))
         } else if (i == IloCP.Callback.ObjBound) {
           val bound = model.getObjBound()
-          resultsQueue.offer(s"ObjBound:$bound")
+          postMessage(ObjBoundMessage(name = "ObjBound", data = bound))
         } else if (i == IloCP.Callback.Solution) {
           val markValues = marks.map(model.getValue(_)).sorted.mkString(", ")
-          resultsQueue.offer(s"NewSolution:$markValues")
+          postMessage(NewSolutionMessage(name = "NewSolution", data = markValues))
         } else if (i == IloCP.Callback.EndSearch) {
-          resultsQueue.offer("EndSearch")
-          println("*** EndSearch")
-          println("Num solutions: ")
-          println(model.getInfo(IloCP.IntInfo.NumberOfSolutions))
-          println("SolveTime (seconds): ")
-          println(model.getInfo(IloCP.DoubleInfo.SolveTime))
+          postMessage(EndSearch(name = "EndSearch"))
         }
       }
     }
@@ -126,9 +129,9 @@ object GolombRuler {
     if (model.solve()) {
       marks.map(model.getValue(_)).sorted.foreach(println)
       val solutionStr = marks.map(model.getValue(_)).sorted.mkString(", ")
-      resultsQueue.offer(s"Final:$solutionStr")
+      postMessage(FinalMessage(name = "Final", data = solutionStr))
     } else {
-      resultsQueue.offer("Final:None")
+      postMessage(FinalMessage(name = "Final", data = "None"))
     }
     model.end()
   }

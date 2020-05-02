@@ -14,6 +14,11 @@ enum SolverStates {
 type IOrderHistory = { time: number, order: number}[];
 type IBoundHistory = { time: number, bound: number}[];
 
+type JsonPayload = {
+  name: string;
+  data: any;
+}
+
 // _TODO_ Detect current state of solver on load.
 const App: React.SFC = () => {
   /* Solver Inputs */
@@ -26,7 +31,7 @@ const App: React.SFC = () => {
   const [solution, setSolution]             = useState<string | undefined>(undefined);
   const [intermediate, setIntermediate]     = useState<string | undefined>(undefined);
   const [objBound, setObjBound]             = useState<Number>(0);
-  const [currentVars, setCurrentVars]       = useState<String>("n/a");
+  const [currentVars, setCurrentVars]       = useState<String>("");
   const [currentOrder, setCurrentOrder]     = useState<number | undefined>(undefined);
   const [orderHistory, setOrderHistory]     = useState<IOrderHistory>([]);
   const [boundHistory, setBoundHistory]     = useState<IBoundHistory>([]);
@@ -40,35 +45,10 @@ const App: React.SFC = () => {
     100
   )
 
-  // Messages that are still plain strings. TODO convert to json.
-  const handleStringMessages = (eventName: string, eventData: string) => {
-    switch (eventName) {
-      case 'Periodic':
-        setSolverState(SolverStates.Searching);
-        setCurrentVars(eventData);
-        break;
-      case 'ObjBound':
-        setObjBound(parseInt(eventData));
-        setBoundHistory((existingHistory: IBoundHistory) => {
-          const newHistory = [...existingHistory, { time: Date.now(), bound: parseInt(eventData, 10)}];
-          return newHistory;
-        })
-        break;
-      case 'NewSolution':
-        setIntermediate(eventData);
-        break;
-      case 'EndSearch':
-        setSolverState(SolverStates.Idle);
-        break;
-      case 'Final':
-        setSolution(eventData);
-        break;
-      default:
-    }
-  }
 
-  const handleJsonMessages = (eventName: string, eventData: any) => {
-    switch (eventName) {
+  const handleJsonMessages = (message: JsonPayload) => {
+    const { name, data } = message;
+    switch (name) {
       case 'StartSearch':
         setSolverState(SolverStates.Searching);
         setIntermediate(undefined);
@@ -77,11 +57,31 @@ const App: React.SFC = () => {
         setOrderHistory([]);
         break;
       case 'NewOrder':
-        setCurrentOrder(eventData);
+        setCurrentOrder(data);
         setOrderHistory((currHistory) => {
-          const newHistory = [...currHistory, { time: Date.now(), order: eventData }];
+          const newHistory = [...currHistory, { time: Date.now(), order: data }];
           return newHistory;
         });
+        break;
+      case 'ObjBound':
+        setObjBound(data);
+        setBoundHistory((existingHistory: IBoundHistory) => {
+          const newHistory = [...existingHistory, { time: Date.now(), bound: data }];
+          return newHistory;
+        })
+        break;
+      case 'Periodic':
+        setSolverState(SolverStates.Searching);
+        setCurrentVars(data);
+        break;
+      case 'NewSolution':
+        setIntermediate(data);
+        break;
+      case 'EndSearch':
+        setSolverState(SolverStates.Idle);
+        break;
+      case 'Final':
+        setSolution(data);
         break;
       default:
     }
@@ -92,23 +92,8 @@ const App: React.SFC = () => {
     () => {
       const socket = new WebSocket(`ws://${SERVER_HOST}:${SERVER_PORT}/ws`);
       socket.addEventListener('message', (evt) => {
-        // Check if its json. Not all messages have been ported over to json yet.
-        let payload: { name: string, data: any } | undefined;
-        try {
-          payload = JSON.parse(evt.data);
-        } catch {
-          payload = undefined;
-        }
-
-        if (payload !== undefined) {
-          const eventName = payload.name;
-          const eventData = payload.data;
-          handleJsonMessages(eventName, eventData);
-        } else {
-          const eventName = evt.data.split(':')[0];
-          const eventData = evt.data.split(':')[1];
-          handleStringMessages(eventName, eventData);
-        }
+        const payload: JsonPayload = JSON.parse(evt.data);
+        handleJsonMessages(payload);
       });
       return () => socket.close();
     },
