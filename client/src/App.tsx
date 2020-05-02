@@ -8,7 +8,7 @@ const SERVER_URL = `http://${SERVER_HOST}:${SERVER_PORT}`;
 
 enum SolverStates {
   Searching = 'Searching',
-  Idle = 'Idle'
+  Idle      = 'Idle'
 }
 
 type IOrderHistory = { time: number, order: number}[];
@@ -18,19 +18,18 @@ type IBoundHistory = { time: number, bound: number}[];
 const App: React.SFC = () => {
   /* Solver Inputs */
   const [timeoutText, setTimeoutText] = useState('30');
-  const [orderText, setOrderText] = useState('5');
+  const [orderText, setOrderText]     = useState('5');
 
   /* Solver state */
   const [solveStartTime, setSolveStartTime] = useState<number | undefined>(undefined);
-  const [solverState, setSolverState] = useState(SolverStates.Idle);
-  const [solution, setSolution] = useState(undefined);
-  const [intermediateSolution, setIntermediateSolution] = useState(undefined);
-  const [objBound, setObjBound] = useState<Number>(0);
-  const [currentVars, setCurrentVars] = useState<String>("n/a");
-  const [currentOrder, setCurrentOrder] = useState<String>("n/a");
-  const [orderHistory, setOrderHistory] = useState<IOrderHistory>([]);
-  const [boundHistory, setBoundHistory] = useState<IBoundHistory>([]);
-
+  const [solverState, setSolverState]       = useState(SolverStates.Idle);
+  const [solution, setSolution]             = useState<string | undefined>(undefined);
+  const [intermediate, setIntermediate]     = useState<string | undefined>(undefined);
+  const [objBound, setObjBound]             = useState<Number>(0);
+  const [currentVars, setCurrentVars]       = useState<String>("n/a");
+  const [currentOrder, setCurrentOrder]     = useState<String>("n/a");
+  const [orderHistory, setOrderHistory]     = useState<IOrderHistory>([]);
+  const [boundHistory, setBoundHistory]     = useState<IBoundHistory>([]);
 
   /* UI state showing animated epsilon for search text */
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -41,48 +40,74 @@ const App: React.SFC = () => {
     100
   )
 
+  // Messages that are still plain strings. TODO convert to json.
+  const handleStringMessages = (eventName: string, eventData: string) => {
+    switch (eventName) {
+      case 'Periodic':
+        setSolverState(SolverStates.Searching);
+        setCurrentVars(eventData);
+        break;
+      case 'ObjBound':
+        setObjBound(parseInt(eventData));
+        setBoundHistory((existingHistory: IBoundHistory) => {
+          const newHistory = [...existingHistory, { time: Date.now(), bound: parseInt(eventData, 10)}];
+          return newHistory;
+        })
+        break;
+      case 'NewSolution':
+        setIntermediate(eventData);
+        break;
+      case 'EndSearch':
+        setSolverState(SolverStates.Idle);
+        break;
+      case 'Final':
+        setSolution(eventData);
+        break;
+      default:
+    }
+  }
+
+  const handleJsonMessages = (eventName: string, eventData: any) => {
+    switch (eventName) {
+      case 'StartSearch':
+        setSolverState(SolverStates.Searching);
+        setIntermediate(undefined);
+        setSolution(undefined);
+        setCurrentOrder('n/a');
+        setOrderHistory([]);
+        break;
+      case 'NewOrder':
+        setCurrentOrder(eventData);
+        setOrderHistory((currHistory) => {
+          const newHistory = [...currHistory, { time: Date.now(), order: parseInt(eventData, 10) }];
+          return newHistory;
+        });
+        break;
+      default:
+    }
+  }
+
+  // Setup the websocket
   useEffect(
     () => {
       const socket = new WebSocket(`ws://${SERVER_HOST}:${SERVER_PORT}/ws`);
       socket.addEventListener('message', (evt) => {
-        const eventName = evt.data.split(':')[0];
-        const eventData = evt.data.split(':')[1];
-        switch (eventName) {
-          case 'StartSearch':
-            setSolverState(SolverStates.Searching);
-            setIntermediateSolution(undefined);
-            setSolution(undefined);
-            setCurrentOrder('n/a');
-            setOrderHistory([]);
-            break;
-          case 'Periodic':
-            setSolverState(SolverStates.Searching);
-            setCurrentVars(eventData);
-            break;
-          case 'NewOrder':
-            setCurrentOrder(eventData);
-            setOrderHistory((currHistory) => {
-              const newHistory = [...currHistory, { time: Date.now(), order: parseInt(eventData, 10) }];
-              return newHistory;
-            });
-            break;
-          case 'ObjBound':
-            setObjBound(parseInt(eventData));
-            setBoundHistory((existingHistory: IBoundHistory) => {
-              const newHistory = [...existingHistory, { time: Date.now(), bound: parseInt(eventData, 10)}];
-              return newHistory;
-            })
-            break;
-          case 'NewSolution':
-            setIntermediateSolution(eventData);
-            break;
-          case 'EndSearch':
-            setSolverState(SolverStates.Idle);
-            break;
-          case 'Final':
-            setSolution(eventData);
-            break;
-          default:
+        // Check if its json. Not all messages have been ported over to json yet.
+        let payload: { name: string, data: any } | undefined;
+        try {
+          payload = JSON.parse(evt.data);
+        } catch {
+          payload = undefined;
+        }
+
+        if (payload !== undefined) {
+          const eventName = payload.name;
+          const eventData = payload.data;
+          handleJsonMessages(eventName, eventData);
+        } else {
+          const eventName = evt.data.split(':')[0];
+          const eventData = evt.data.split(':')[1];
+          handleStringMessages(eventName, eventData);
         }
       });
       return () => socket.close();
@@ -104,7 +129,7 @@ const App: React.SFC = () => {
     stateText = "Idle"
   }
 
-  const solutionForRuler: string | undefined = solution ? solution : intermediateSolution;
+  const solutionForRuler: string | undefined = solution ? solution : intermediate;
 
   return (
     <div>
@@ -124,8 +149,6 @@ const App: React.SFC = () => {
               fetch(
                 `${SERVER_URL}/solve?timeout=${validatedTimeout}&order=${validatedOrder}`
               )
-              .then(res => res.json())
-              .then(json => console.log("status: ", json))
             }}
           >
             Solve
@@ -163,7 +186,7 @@ const App: React.SFC = () => {
           </tr>
           <tr>
             <td>Intermediate:</td>
-            <td>{intermediateSolution || "n/a"}</td>
+            <td>{intermediate || "n/a"}</td>
           </tr>
           <tr>
             <td>Result:</td>

@@ -4,6 +4,7 @@ import akka.actor.Actor
 import akka.stream.scaladsl.SourceQueueWithComplete
 import ilog.concert._
 import ilog.cp._
+import org.json4s.native.Serialization.write
 
 /*
   In mathematics, a Golomb ruler is a set of marks at integer positions along
@@ -23,7 +24,14 @@ import ilog.cp._
   * For order 10: 1 optimal solution 0 1 6 10 23 26 34 41 53 55
  */
 object GolombRuler {
+  // Setup CPLEX
   System.loadLibrary("cp_wrap_cpp_java1290")
+
+  // Setup for sending json payloads over the queue
+  implicit val formats = org.json4s.DefaultFormats // for writing json
+  trait Message
+  case class QueueMessage(name: String) extends Message
+  case class NewOrderMessage(name: String, data: String) extends Message
 
   /*
     The problem statement:
@@ -74,10 +82,14 @@ object GolombRuler {
       )
     )
 
+    // Setup callbacks to report search status
+    def postMessage(message: Message): Unit = {
+      resultsQueue.offer(write(message))
+    }
     class SearchCallback extends IloCP.Callback {
       override def invoke(model: IloCP, i: Int): Unit = {
         if (i == IloCP.Callback.StartSearch) {
-          resultsQueue.offer("StartSearch")
+          postMessage(QueueMessage(name = "StartSearch"))
         } else if (i == IloCP.Callback.Periodic) {
           val current: Array[Double] = marks.map { m =>
             try {
@@ -89,7 +101,7 @@ object GolombRuler {
           }
           val marksStr = current.sorted.mkString(", ")
           val currentOrder: Double = current.max(cmp = Ordering.Double)
-          resultsQueue.offer(s"NewOrder:$currentOrder")
+          postMessage(NewOrderMessage(name = "NewOrder", data = currentOrder.toString)) // TODO should send a number
           resultsQueue.offer(s"Periodic:$marksStr")
         } else if (i == IloCP.Callback.ObjBound) {
           val bound = model.getObjBound()
