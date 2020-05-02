@@ -161,15 +161,12 @@ class GolombRulerActor(resultsQueue: SourceQueueWithComplete[String]) extends Ac
       if (solving) {
         sender() ! GolombStateSolving
       } else {
-        println("*** Actor receive solve")
         solving = true
         sender() ! GolombStateSolving
         GolombRuler.solve(resultsQueue, order, timeout)
         solving = false
       }
-    case "test" => println("*** Actor receive test")
     case "state" => {
-      println("*** Actor receive state")
       if (solving) {
         sender() ! GolombStateSolving
       } else {

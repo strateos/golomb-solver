@@ -53,10 +53,10 @@ const App: React.SFC = () => {
         setSolverState(SolverStates.Searching); // Start search state
                                                 //
         setIntermediate(undefined);             // Reset to initial value
-        setSolution(undefined);                 // |
-        setCurrentOrder(undefined);             // |
-        setOrderHistory([]);                    // |
-        setBoundHistory([]);                    // |
+        setSolution(undefined);                 //
+        setCurrentOrder(undefined);             //
+        setOrderHistory([]);                    //
+        setBoundHistory([]);                    //
         break;
       case 'NewOrder':
         setCurrentOrder(data);
