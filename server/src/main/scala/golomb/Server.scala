@@ -1,26 +1,43 @@
 package golomb
 
-import akka.{Done, NotUsed}
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.NotUsed
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import akka.http.scaladsl.server.Directives._
-import akka.stream.{ActorMaterializer, OverflowStrategy, QueueOfferResult, ThrottleMode}
+import akka.http.scaladsl.server.Directives.{complete, _}
+import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl._
 import StatusCodes._
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.server.StandardRoute
+import org.json4s.native.Serialization.write
 
-import scala.concurrent.duration._
-import scala.collection.immutable.Queue
 import scala.concurrent.Promise
 import scala.io.StdIn
 
-object Server extends App {
-  override def main(args: Array[String]) {
+case class StatusResponse(status: String)
 
+object Server extends App {
+  // Returns successful status code with a json payload
+  // There are libs to do this if we end up re-inventing the wheel too often
+  def completeJson(jsonString: String): StandardRoute = {
+    complete(
+      HttpResponse(
+        status = OK,
+        entity = HttpEntity(
+          ContentType(MediaTypes.`application/json`),
+          jsonString
+        )
+      )
+    )
+  }
+
+  override def main(args: Array[String]) {
     implicit val system = ActorSystem("actors")
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
+    implicit val formats = org.json4s.DefaultFormats // for writing json
 
     // The source to broadcast
     val dataSource = Source.queue[String](1000, OverflowStrategy.backpressure)
@@ -50,10 +67,13 @@ object Server extends App {
         .merge(producer) // Stream the data we want to the client
         .map(l => TextMessage(l.toString))
 
-    val route =
+    // Just let any client connect. NOTE This is only safe in local dev mode.
+    val responseHeaders = List(RawHeader("Access-Control-Allow-Origin", "*"))
+
+    val route = respondWithDefaultHeaders(responseHeaders) {
       path("ping") {
         get {
-          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>pong</h1>"))
+          completeJson(write(StatusResponse(status = "up")))
         }
       } ~ path("crash") {
         get {
@@ -73,12 +93,7 @@ object Server extends App {
               complete(HttpResponse(BadRequest, entity = "'timeout' must be non negative integer"))
             } else {
               golombActor ! StartSolve(validatedOrder, timeout.toInt)
-              complete(
-                HttpEntity(
-                  ContentTypes.`application/json`,
-                  "{\"status\": \"solving\"}"
-                )
-              )
+              completeJson(write(StatusResponse(status = "solving")))
             }
           }
         }
@@ -95,6 +110,7 @@ object Server extends App {
           handleWebSocketMessages(wsHandler)
         }
       }
+    }
 
     val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
 
