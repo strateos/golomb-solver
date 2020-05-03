@@ -11,8 +11,7 @@ enum SolverStates {
   Idle      = 'Idle'
 }
 
-type IOrderHistory = { time: number, order: number}[];
-type IBoundHistory = { time: number, bound: number}[];
+type TimeSeries = { time: number, value: number }[];
 
 type JsonPayload = {
   name: string;
@@ -31,10 +30,11 @@ const App: React.SFC = () => {
   const [solverState, setSolverState]       = useState(SolverStates.Idle);
   const [solution, setSolution]             = useState<Solution | undefined>(undefined);
   const [intermediate, setIntermediate]     = useState<Solution | undefined>(undefined);
-  const [currentVars, setCurrentVars]       = useState<String>("");
+  const [currentVars, setCurrentVars]       = useState<String>(""); // TODO are we using this?
   const [currentOrder, setCurrentOrder]     = useState<number | undefined>(undefined);
-  const [orderHistory, setOrderHistory]     = useState<IOrderHistory>([]);
-  const [boundHistory, setBoundHistory]     = useState<IBoundHistory>([]);
+  const [orderHistory, setOrderHistory]     = useState<TimeSeries>([]);
+  const [boundHistory, setBoundHistory]     = useState<TimeSeries>([]);
+  const [gapHistory, setGapHistory]         = useState<TimeSeries>([]);
 
   /* UI state showing animated epsilon for search text */
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -57,23 +57,30 @@ const App: React.SFC = () => {
         setCurrentOrder(undefined);             //
         setOrderHistory([]);                    //
         setBoundHistory([]);                    //
+        setGapHistory([])                       //
         break;
       case 'NewOrder':
         setCurrentOrder(data);
         setOrderHistory((currHistory) => {
-          const newHistory = [...currHistory, { time: Date.now(), order: data }];
+          const newHistory = [...currHistory, { time: Date.now(), value: data }];
           return newHistory;
         });
         break;
       case 'ObjBound':
-        setBoundHistory((existingHistory: IBoundHistory) => {
-          const newHistory = [...existingHistory, { time: Date.now(), bound: data }];
+        setBoundHistory((existingHistory) => {
+          const newHistory = [...existingHistory, { time: Date.now(), value: data }];
           return newHistory;
         })
         break;
       case 'Periodic':
         setSolverState(SolverStates.Searching);
         setCurrentVars(data);
+        break;
+      case 'Gap':
+        setGapHistory((existingHistory) => {
+          const newHistory = [...existingHistory, { time: Date.now(), value: data }];
+          return newHistory;
+        })
         break;
       case 'NewSolution':
         setIntermediate(data);
@@ -149,6 +156,7 @@ const App: React.SFC = () => {
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'row' }}>
           {(orderHistory.length > 0) && <OrderHistory orderHistory={orderHistory} />}
           {(boundHistory.length > 0) && <BoundHistory boundHistory={boundHistory} />}
+          {(gapHistory.length > 0) && <GapHistory gapHistory={gapHistory} />}
         </div>
         <table className="results-table">
           <tbody>
@@ -230,7 +238,7 @@ const Ruler: React.SFC<{solution: number[]}> = ({ solution }) => {
   );
 };
 
-const OrderHistory: React.SFC<{orderHistory: IOrderHistory}> = (props) => {
+const OrderHistory: React.SFC<{orderHistory: TimeSeries}> = (props) => {
   const { orderHistory } = props;
   return (
     <div
@@ -247,7 +255,7 @@ const OrderHistory: React.SFC<{orderHistory: IOrderHistory}> = (props) => {
         <VictoryLine
           scale={{ x: "time", y: "linear" }}
           data={orderHistory.map((point) => {
-            return { x: point.time, y: point.order };
+            return { x: point.time, y: point.value };
           })}
           style={{
             data: { stroke: "#c43a31" },
@@ -260,7 +268,7 @@ const OrderHistory: React.SFC<{orderHistory: IOrderHistory}> = (props) => {
 }
 
 
-const BoundHistory: React.SFC<{boundHistory: IBoundHistory}> = (props) => {
+const BoundHistory: React.SFC<{boundHistory: TimeSeries}> = (props) => {
   const { boundHistory } = props;
   return (
     <div
@@ -277,7 +285,7 @@ const BoundHistory: React.SFC<{boundHistory: IBoundHistory}> = (props) => {
         <VictoryLine
           scale={{ x: "time", y: "linear" }}
           data={boundHistory.map((point) => {
-            return { x: point.time, y: point.bound };
+            return { x: point.time, y: point.value };
           })}
           style={{
             data: { stroke: "#c43a31" },
@@ -288,5 +296,36 @@ const BoundHistory: React.SFC<{boundHistory: IBoundHistory}> = (props) => {
     </div>
   )
 }
+
+const GapHistory: React.SFC<{gapHistory: TimeSeries}> = (props) => {
+  const { gapHistory } = props;
+  return (
+    <div
+      style={{
+        width: 400,
+        height: 400
+      }}
+    >
+      <h5>Gap</h5>
+      <VictoryChart
+        theme={VictoryTheme.material}
+        padding={{ top: 10, left: 40, right: 40, bottom: 40 }}
+        domain={{ y: [0, 1] }}
+      >
+        <VictoryLine
+          scale={{ x: "time", y: "linear" }}
+          data={gapHistory.map((point) => {
+            return { x: point.time, y: point.value };
+          })}
+          style={{
+            data: { stroke: "#c43a31" },
+            parent: { border: "1px solid #ccc"}
+          }}
+        />
+      </VictoryChart>
+    </div>
+  )
+}
+
 
 export default App;

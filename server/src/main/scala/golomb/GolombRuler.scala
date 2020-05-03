@@ -41,6 +41,7 @@ object GolombRuler {
   case class NewSolutionMessage(name: String, data: Solution)   extends Message
   case class EndSearch(name: String)                            extends Message
   case class FinalMessage(name: String, data: Option[Solution]) extends Message
+  case class GapMessage(name: String, data: Double)             extends Message
 
   /*
     The problem statement:
@@ -92,6 +93,9 @@ object GolombRuler {
     )
 
     // Setup callbacks to report search status
+    // https://developer.ibm.com/docloud/blog/2019/12/17/new-callback-functionality-in-cp-optimizer/
+    // TODO use getObjValue to get current objective value
+    // TODO fetch cp metrics, like NumberOfSolutions, MemoryUsage, NumberOfFails, ...
     def postMessage(message: Message): Unit = {
       resultsQueue.offer(write(message))
     }
@@ -118,6 +122,7 @@ object GolombRuler {
         } else if (i == IloCP.Callback.Solution) {
           val marksArray = marks.map(model.getValue(_)).sorted
           postMessage(NewSolutionMessage(name = "NewSolution", data = marksArray))
+          postMessage(GapMessage(name = "Gap", data = model.getObjGap()))
         } else if (i == IloCP.Callback.EndSearch) {
           postMessage(EndSearch(name = "EndSearch"))
         }
