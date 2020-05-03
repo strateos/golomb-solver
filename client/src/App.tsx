@@ -27,6 +27,8 @@ const App: React.SFC = () => {
   const [orderText, setOrderText]     = useState('5');  // TODO number
 
   /* Solver state */
+  const [startTime, setStartTime]           = useState<Date | undefined>(undefined);
+  const [endTime, setEndTime]               = useState<Date | undefined>(undefined);
   const [solverState, setSolverState]       = useState(SolverStates.Idle);
   const [solution, setSolution]             = useState<Solution | undefined>(undefined);
   const [intermediate, setIntermediate]     = useState<Solution | undefined>(undefined);
@@ -50,19 +52,21 @@ const App: React.SFC = () => {
     const { name, data } = message;
     switch (name) {
       case 'StartSearch':
-        setSolverState(SolverStates.Searching); // Start search state
-                                                //
-        setIntermediate(undefined);             // Reset to initial value
+        setStartTime(new Date());               // Initialize search state
+        setSolverState(SolverStates.Searching); //
+
+        setIntermediate(undefined);             // Reset to initial values
         setSolution(undefined);                 //
         setCurrentOrder(undefined);             //
         setOrderHistory([]);                    //
         setBoundHistory([]);                    //
         setGapHistory([])                       //
+        setEndTime(undefined);                  //
         break;
       case 'NewOrder':
         setCurrentOrder(data);
-        setOrderHistory((currHistory) => {
-          const newHistory = [...currHistory, { time: Date.now(), value: data }];
+        setOrderHistory((existingHistory) => {
+          const newHistory = [...existingHistory, { time: Date.now(), value: data }];
           return newHistory;
         });
         break;
@@ -87,6 +91,7 @@ const App: React.SFC = () => {
         break;
       case 'EndSearch':
         setSolverState(SolverStates.Idle);
+        setEndTime(new Date());
         break;
       case 'Final':
         setSolution(data);
@@ -124,6 +129,12 @@ const App: React.SFC = () => {
 
   const solutionForRuler = solution ? solution : intermediate;
 
+  // We render the charts regardless of if twe have data or not, so we need
+  // to come up with some default time range to display
+  const graphTime0 = startTime ? startTime.getTime() : (Date.now() - 100000) // default to some time in past
+  const graphTime1 = solverState === SolverStates.Searching ? Date.now() : (endTime || Date.now()); // default to now if we aren't searching (or done)
+  const timeDomain = [graphTime0, graphTime1];
+
   return (
     <div>
       <div style={{ margin: '20px 0 0 20px' }}>
@@ -154,9 +165,9 @@ const App: React.SFC = () => {
           </div>
         )}
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'row' }}>
-          <TimeSeriesChart data={orderHistory} title="Objective" />
-          <TimeSeriesChart data={boundHistory} title="Objective Lower Bound"/>
-          <TimeSeriesChart data={gapHistory} title="Gap" domain={{ y: [0,1] }} />
+          <TimeSeriesChart data={orderHistory} title="Objective" domain={{ x: timeDomain }} />
+          <TimeSeriesChart data={boundHistory} title="Objective Lower Bound" domain={{ x: timeDomain  }} />
+          <TimeSeriesChart data={gapHistory} title="Gap" domain={{ x: timeDomain, y: [0,1] }} />
         </div>
         <table className="results-table">
           <tbody>
