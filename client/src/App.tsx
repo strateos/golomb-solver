@@ -154,9 +154,9 @@ const App: React.SFC = () => {
           </div>
         )}
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'row' }}>
-          {(orderHistory.length > 0) && <OrderHistory orderHistory={orderHistory} />}
-          {(boundHistory.length > 0) && <BoundHistory boundHistory={boundHistory} />}
-          {(gapHistory.length > 0) && <GapHistory gapHistory={gapHistory} />}
+          <TimeSeriesChart data={orderHistory} title="Objective" />
+          <TimeSeriesChart data={boundHistory} title="Objective Lower Bound"/>
+          <TimeSeriesChart data={gapHistory} title="Gap" domain={{ y: [0,1] }} />
         </div>
         <table className="results-table">
           <tbody>
@@ -238,8 +238,7 @@ const Ruler: React.SFC<{solution: number[]}> = ({ solution }) => {
   );
 };
 
-const OrderHistory: React.SFC<{orderHistory: TimeSeries}> = (props) => {
-  const { orderHistory } = props;
+const TimeSeriesChart: React.SFC<{data: TimeSeries, title: string; domain?: any}> = (props) => {
   return (
     <div
       style={{
@@ -247,14 +246,15 @@ const OrderHistory: React.SFC<{orderHistory: TimeSeries}> = (props) => {
         height: 400
       }}
     >
-      <h5>Objective</h5>
+      <h5>{props.title}</h5>
       <VictoryChart
         theme={VictoryTheme.material}
         padding={{ top: 10, left: 40, right: 40, bottom: 40 }}
+        domain={props.domain ? props.domain : undefined}
       >
         <VictoryLine
           scale={{ x: "time", y: "linear" }}
-          data={orderHistory.map((point) => {
+          data={props.data.map((point) => {
             return { x: point.time, y: point.value };
           })}
           style={{
@@ -267,65 +267,6 @@ const OrderHistory: React.SFC<{orderHistory: TimeSeries}> = (props) => {
   )
 }
 
-
-const BoundHistory: React.SFC<{boundHistory: TimeSeries}> = (props) => {
-  const { boundHistory } = props;
-  return (
-    <div
-      style={{
-        width: 400,
-        height: 400
-      }}
-    >
-      <h5>Objective Lower Bound</h5>
-      <VictoryChart
-        theme={VictoryTheme.material}
-        padding={{ top: 10, left: 40, right: 40, bottom: 40 }}
-      >
-        <VictoryLine
-          scale={{ x: "time", y: "linear" }}
-          data={boundHistory.map((point) => {
-            return { x: point.time, y: point.value };
-          })}
-          style={{
-            data: { stroke: "#c43a31" },
-            parent: { border: "1px solid #ccc"}
-          }}
-        />
-      </VictoryChart>
-    </div>
-  )
-}
-
-const GapHistory: React.SFC<{gapHistory: TimeSeries}> = (props) => {
-  const { gapHistory } = props;
-  return (
-    <div
-      style={{
-        width: 400,
-        height: 400
-      }}
-    >
-      <h5>Gap</h5>
-      <VictoryChart
-        theme={VictoryTheme.material}
-        padding={{ top: 10, left: 40, right: 40, bottom: 40 }}
-        domain={{ y: [0, 1] }}
-      >
-        <VictoryLine
-          scale={{ x: "time", y: "linear" }}
-          data={gapHistory.map((point) => {
-            return { x: point.time, y: point.value };
-          })}
-          style={{
-            data: { stroke: "#c43a31" },
-            parent: { border: "1px solid #ccc"}
-          }}
-        />
-      </VictoryChart>
-    </div>
-  )
-}
 
 
 export default App;
