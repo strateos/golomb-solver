@@ -37,10 +37,10 @@ object GolombRuler {
   case class QueueMessage(name: String)                         extends Message
   case class NewOrderMessage(name: String, data: Double)        extends Message
   case class ObjBoundMessage(name: String, data: Double)        extends Message
-  case class PeriodicMessage(name: String, data: String)        extends Message
+  case class PeriodicMessage(name: String)                      extends Message
   case class NewSolutionMessage(name: String, data: Solution)   extends Message
   case class EndSearch(name: String)                            extends Message
-  case class FinalMessage(name: String, data: Option[Solution]) extends Message
+  case class FinalMessage(name: String, data: Boolean)          extends Message
   case class GapMessage(name: String, data: Double)             extends Message
 
   /*
@@ -104,18 +104,7 @@ object GolombRuler {
         if (i == IloCP.Callback.StartSearch) {
           postMessage(QueueMessage(name = "StartSearch"))
         } else if (i == IloCP.Callback.Periodic) {
-          val current: Array[Double] = marks.map { m =>
-            try {
-              model.getValue(m)
-            } catch {
-              case _: Throwable =>
-                0
-            }
-          }
-          val marksStr = current.sorted.mkString(", ")
-          val currentOrder: Double = current.max(cmp = Ordering.Double)
-          postMessage(NewOrderMessage(name = "NewOrder", data = currentOrder))
-          postMessage(PeriodicMessage(name = "Periodic", data = marksStr))
+          postMessage(PeriodicMessage(name = "Periodic")) // just tell client we're still searching
         } else if (i == IloCP.Callback.ObjBound) {
           val bound = model.getObjBound()
           postMessage(ObjBoundMessage(name = "ObjBound", data = bound))
@@ -133,25 +122,12 @@ object GolombRuler {
     // Solve
     model.setParameter(IloCP.DoubleParam.TimeLimit, timeout)
     if (model.solve()) {
-      marks.map(model.getValue(_)).sorted.foreach(println)
-      val marksArray = marks.map(model.getValue(_)).sorted
-      postMessage(FinalMessage(name = "Final", data = Some(marksArray)))
+      marks.map(model.getValue(_)).sorted.foreach(println) // print to sdout
+      postMessage(FinalMessage(name = "Final", data = true)) // update client
     } else {
-      postMessage(FinalMessage(name = "Final", data = None))
+      postMessage(FinalMessage(name = "Final", data = false))
     }
     model.end()
-  }
-
-  def solutionStr(marks: Array[IloIntVar], model: IloCP): String = {
-    val current: Array[Double] = marks.map { m =>
-      try {
-        model.getValue(m)
-      } catch {
-        case _: Throwable =>
-          0 // ugly default, necessary when uninitialized
-      }
-    }
-    current.sorted.mkString(", ")
   }
 }
 
