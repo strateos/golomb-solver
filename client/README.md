@@ -2,8 +2,9 @@
 This application displays metrics about solving a Golomb Ruler using constraint programming.
 
 ## Roadmap
-- [] The state mgmt is pretty cludgy still
-- [] Get rid of layout jank when charts appear for the first time
+- [] Too much state is managed client side (meaning refreshing during search causes weirdness)
+- [] Smart padding applied to charts to lines don't get cut off when they're at y max/min values
+- [] The marks don't seem to animate `x` very nicely as they should.
 
 ## Usage
 

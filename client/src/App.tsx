@@ -24,7 +24,7 @@ type Solution = number[];
 const App: React.SFC = () => {
   /* Solver Inputs */
   const [timeoutText, setTimeoutText] = useState('15'); // TODO number
-  const [orderText, setOrderText]     = useState('5');  // TODO number
+  const [orderText, setOrderText]     = useState('7');  // TODO number
 
   /* Solver state */
   const [startTime, setStartTime]           = useState<Date | undefined>(undefined);
@@ -157,38 +157,18 @@ const App: React.SFC = () => {
         </div>
         <div style={{ marginTop: 20, marginBottom: 20 }}>State: {stateText}</div>
       </div>
-      <div style={{ margin: '20px 0 0 20px' }}>
+      <div style={{ margin: '20px 0 0 20px', display: 'flex', flexDirection: 'row' }}>
+        <TimeSeriesChart data={orderHistory} title="Objective" domain={{ x: timeDomain }} />
+        <TimeSeriesChart data={boundHistory} title="Objective Lower Bound" domain={{ x: timeDomain  }} />
+        <TimeSeriesChart data={gapHistory} title="Gap" domain={{ x: timeDomain, y: [0,1] }} />
+      </div>
+      <div style={{ margin: '60px 0 0 20px' }}>
         {solutionForRuler && (
           <div>
             <h5>Current Best Ruler</h5>
             <Ruler solution={solutionForRuler} />
           </div>
         )}
-        <div style={{ marginTop: 20, display: 'flex', flexDirection: 'row' }}>
-          <TimeSeriesChart data={orderHistory} title="Objective" domain={{ x: timeDomain }} />
-          <TimeSeriesChart data={boundHistory} title="Objective Lower Bound" domain={{ x: timeDomain  }} />
-          <TimeSeriesChart data={gapHistory} title="Gap" domain={{ x: timeDomain, y: [0,1] }} />
-        </div>
-        <table className="results-table">
-          <tbody>
-            <tr>
-              <td>Current:</td>
-              <td>{currentVars}</td>
-            </tr>
-            <tr>
-              <td>Order:</td>
-              <td>{currentOrder}</td>
-            </tr>
-            <tr>
-              <td>Intermediate:</td>
-              <td>{intermediate || "n/a"}</td>
-            </tr>
-            <tr>
-              <td>Result:</td>
-              <td>{solution || "n/a"}</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
   )
