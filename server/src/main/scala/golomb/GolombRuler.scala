@@ -68,7 +68,7 @@ object GolombRuler {
       model.getInfo(IntInfo.NumberOfSolutions)
     )
   }
-  
+
   /*
     The problem statement:
     We will be given an order which is an int. This determines the number of marks.
