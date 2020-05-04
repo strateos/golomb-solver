@@ -8,7 +8,7 @@ An application for producing [Golomb Rulers](https://en.wikipedia.org/wiki/Golom
 
 ## Demo
 Below is an example of running the app with an order of `15`.
-![demo](https://user-images.githubusercontent.com/3643611/80891962-5f3eb580-8c7c-11ea-9122-8781a94feddc.gif)
+![demo](https://user-images.githubusercontent.com/3643611/81000667-7952d200-8dfb-11ea-956b-d98cfe531de7.gif)
 
 ## Directory structure
 ```
