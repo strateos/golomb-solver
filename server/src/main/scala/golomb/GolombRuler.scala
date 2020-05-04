@@ -3,6 +3,7 @@ package golomb
 import akka.actor.Actor
 import akka.stream.scaladsl.SourceQueueWithComplete
 import ilog.concert._
+import ilog.cp.IloCP.{DoubleInfo, IntInfo, IntParam}
 import ilog.cp._
 import org.json4s.native.Serialization.write
 
@@ -37,12 +38,37 @@ object GolombRuler {
   case class QueueMessage(name: String)                         extends Message
   case class NewOrderMessage(name: String, data: Double)        extends Message
   case class ObjBoundMessage(name: String, data: Double)        extends Message
-  case class PeriodicMessage(name: String)                      extends Message
+  case class PeriodicMessage(name: String, data: CPInfoMetrics) extends Message
   case class NewSolutionMessage(name: String, data: Solution)   extends Message
   case class EndSearch(name: String)                            extends Message
   case class FinalMessage(name: String, data: Boolean)          extends Message
   case class GapMessage(name: String, data: Double)             extends Message
 
+  // CPLEX runtime metrics
+  case class CPInfoMetrics(
+    numberOfChoicePoints: Int,
+    numberOfFails: Int,
+    numberOfBranches: Int,
+    memoryUsage: Int,
+    numberOfSolutions: Int
+  )
+
+  /**
+   * Returns a data structure containing various information about a given model.
+   *
+   * @param  model         The CP model to extract information from
+   * @return CPInfoMetrics Information about the CP model
+   */
+  def getModelMetrics(model: IloCP): CPInfoMetrics = {
+    CPInfoMetrics(
+      model.getInfo(IntInfo.NumberOfChoicePoints),
+      model.getInfo(IntInfo.NumberOfFails),
+      model.getInfo(IntInfo.NumberOfBranches),
+      model.getInfo(IntInfo.MemoryUsage),
+      model.getInfo(IntInfo.NumberOfSolutions)
+    )
+  }
+  
   /*
     The problem statement:
     We will be given an order which is an int. This determines the number of marks.
@@ -104,7 +130,7 @@ object GolombRuler {
         if (i == IloCP.Callback.StartSearch) {
           postMessage(QueueMessage(name = "StartSearch"))
         } else if (i == IloCP.Callback.Periodic) {
-          postMessage(PeriodicMessage(name = "Periodic")) // just tell client we're still searching
+          postMessage(PeriodicMessage(name = "Periodic", data = getModelMetrics(model)))
         } else if (i == IloCP.Callback.ObjBound) {
           val bound = model.getObjBound()
           postMessage(ObjBoundMessage(name = "ObjBound", data = bound))

@@ -18,6 +18,9 @@ type JsonPayload = {
   data: any;
 }
 
+// Real time metrics reported by the solver, a few times a second
+type CPInfoMetrics = Map<string, number>;
+
 type Solution = number[];
 
 // _TODO_ Detect current state of solver on load.
@@ -35,6 +38,7 @@ const App: React.SFC = () => {
   const [orderHistory, setOrderHistory]     = useState<TimeSeries>([]);
   const [boundHistory, setBoundHistory]     = useState<TimeSeries>([]);
   const [gapHistory, setGapHistory]         = useState<TimeSeries>([]);
+  const [metricsHistory, setMetricsHistory] = useState<CPInfoMetrics[]>([]);
 
   /* UI state showing animated epsilon for search text */
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -48,7 +52,7 @@ const App: React.SFC = () => {
 
   const handleJsonMessages = (message: JsonPayload) => {
     const { name, data } = message;
-    // TODO type safety
+    // TODO better type safety by making each message handler its own func
     switch (name) {
       case 'StartSearch':
         setStartTime(new Date());               // Initialize search state
@@ -62,27 +66,20 @@ const App: React.SFC = () => {
         setEndTime(undefined);                  //
         break;
       case 'ObjBound':
-        setBoundHistory((existingHistory) => {
-          const newHistory = [...existingHistory, { time: Date.now(), value: data }];
-          return newHistory;
-        })
+        setBoundHistory(history => [...history, { time: Date.now(), value: data }])
         break;
       case 'Periodic':
         setSolverState(SolverStates.Searching);
+        const point = { time: Date.now(), ...data };
+        setMetricsHistory(history => [...history, point])
         break;
       case 'Gap':
-        setGapHistory((existingHistory) => {
-          const newHistory = [...existingHistory, { time: Date.now(), value: data }];
-          return newHistory;
-        })
+        setGapHistory(history => [...history, { time: Date.now(), value: data }])
         break;
       case 'NewSolution':
         setIntermediate(data);
         const objective = data[data.length - 1];
-        setOrderHistory((existingHistory) => {
-          const newHistory = [...existingHistory, { time: Date.now(), value: objective }];
-          return newHistory;
-        });
+        setOrderHistory(history => [...history, { time: Date.now(), value: objective }]);
         break;
       case 'EndSearch':
         setSolverState(SolverStates.Idle);
@@ -156,11 +153,6 @@ const App: React.SFC = () => {
         </div>
         <div style={{ marginTop: 20, marginBottom: 20 }}>State: {stateText}</div>
       </div>
-      <div style={{ margin: '20px 0 0 20px', display: 'flex', flexDirection: 'row' }}>
-        <TimeSeriesChart data={orderHistory} title="Objective" domain={{ x: timeDomain }} />
-        <TimeSeriesChart data={boundHistory} title="Objective Lower Bound" domain={{ x: timeDomain  }} />
-        <TimeSeriesChart data={gapHistory} title="Gap" domain={{ x: timeDomain, y: [0,1] }} precision={2} />
-      </div>
       <div style={{ margin: '60px 0 0 20px' }}>
         {solutionForRuler && (
           <div>
@@ -168,6 +160,22 @@ const App: React.SFC = () => {
             <Ruler solution={solutionForRuler} />
           </div>
         )}
+      </div>
+      <div style={{ margin: '20px 0 0 20px' }}>
+        <TimeSeriesChart data={orderHistory} title="Objective" domain={{ x: timeDomain }} />
+        <TimeSeriesChart data={boundHistory} title="Objective Lower Bound" domain={{ x: timeDomain  }} />
+        <TimeSeriesChart data={gapHistory} title="Gap" domain={{ x: timeDomain, y: [0,1] }} />
+        {
+          metricsHistory[0] && Object.keys(metricsHistory[0]).map((metricName) => {
+            return (
+              <TimeSeriesChart
+                data={metricsHistory.map((p: any) => ({ time: p.time, value: p[metricName] }))}
+                title={metricName}
+                domain={{ x: timeDomain }}
+              />
+            );
+          })
+        }
       </div>
     </div>
   )
@@ -232,15 +240,14 @@ const TimeSeriesChart: React.SFC<
   {
     data: TimeSeries,
     title: string;
-    precision?: number,
     domain?: any
   }> = (props) => {
-  const { precision = 0 } = props;
   return (
     <div
       style={{
-        width: 400,
-        height: 400
+        width: 300,
+        margin: 60,
+        display: 'inline-block' // so they wrap dynamically
       }}
     >
       <h5>{props.title}</h5>
@@ -254,7 +261,6 @@ const TimeSeriesChart: React.SFC<
           data={props.data.map((point) => {
             return { x: point.time, y: point.value };
           })}
-          labels={({ datum } : { datum: { y: number }}) => datum.y.toFixed(precision)}
           style={{
             data: { stroke: "#c43a31" },
             parent: { border: "1px solid #ccc"}
