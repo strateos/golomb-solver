@@ -7,7 +7,7 @@ An application for producing [Golomb Rulers](https://en.wikipedia.org/wiki/Golom
 - scala, sbt
 
 ## Demo
-Below is an example of running the app with an order of `15`.
+Below is an example of running the app with an order of `7`.
 ![demo](https://user-images.githubusercontent.com/3643611/81000667-7952d200-8dfb-11ea-956b-d98cfe531de7.gif)
 
 ## Directory structure
