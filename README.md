@@ -1,10 +1,18 @@
 # Golomb Ruler Solver
 
-An application for producing [Golomb Rulers](https://en.wikipedia.org/wiki/Golomb_ruler) using constraint programming (CP). While CP may not be the best tool for the job in terms of efficiency, it is a nice problem to use while learning CP. IBM uses it as a training exercise [in their documentation](https://dataplatform.cloud.ibm.com/exchange/public/entry/view/f981e59a5122130858f8899a875e0b54) as well.
+This is an example application for producing [Golomb Rulers](https://en.wikipedia.org/wiki/Golomb_ruler) using constraint programming (CP) via IBM CPLEX. Producing rulers is a fun way to learn CP (even if it isn't the most efficient method of producing them). IBM uses it as a training exercise [in their documentation](https://dataplatform.cloud.ibm.com/exchange/public/entry/view/f981e59a5122130858f8899a875e0b54) as well. It includes a web frontend that displays real time metrics of the solve process (see below).
+
+From [the Wikipedia page](https://en.wikipedia.org/wiki/Golomb_ruler)
+> In mathematics, a Golomb ruler is a set of marks at integer positions along an imaginary ruler such that no two pairs of marks are the same distance apart. The number of marks on the ruler is its order, and the largest distance between two of its marks is its length. Translation and reflection of a Golomb ruler are considered trivial, so the smallest mark is customarily put at 0 and the next mark at the smaller of its two possible values.
+
+Here's an example of a Golomb Ruler of order 4 and length 6.
+![Golomb Ruler Order 4](https://user-images.githubusercontent.com/3643611/81763758-d0544900-9484-11ea-9a75-0ceda490325e.png)
+
 
 ## Requirements
-- [CPLEX Community Edition 12.9](https://www.ibm.com/support/knowledgecenter/SSSA5P_12.9.0/ilog.odms.studio.help/Optimization_Studio/topics/COS_home.html)
+- [CPLEX 12.9](https://www.ibm.com/support/knowledgecenter/SSSA5P_12.9.0/ilog.odms.studio.help/Optimization_Studio/topics/COS_home.html)
 - scala, sbt
+- node
 
 ## Demo
 Below is an example of running the app with an order of `7`.
@@ -26,7 +34,12 @@ root
     |   |   .
 ```
 
-## Roadmap
+## Development
+### Roadmap
 - [] Use better type safety for the messages passed to the client (still a few stringly typed things left)
 - [] Address potential race condition with setting `golombActor` after future resolution in Server.scala
 - [] In Server.scala we need to ignore data coming from clients of the web socket (they just get messages pushed to them)
+- [] Support an option to require solutions are optimal rulers
+- [] Support an option to search for perfect rulers
+
+To include images in the READMEs we do this little hack of uploading the images to [this github issue](https://github.com/strateos/golomb-solver/issues/3) and then copying the url of the resource hosted by github.
