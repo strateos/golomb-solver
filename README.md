@@ -15,7 +15,7 @@ Here's an example of a Golomb Ruler of order 4 and length 6.
 - node
 
 ## Demo
-Below is an example of running the app with an order of `7`.
+Below is an example of running the app with an order of `7`. It displays the current best found ruler, along with real time metrics like the current objective value, `NumberOfChoicePoints`, `NumberOfBranches`, `MemoryUsage` etc.
 ![demo](https://user-images.githubusercontent.com/3643611/81000667-7952d200-8dfb-11ea-956b-d98cfe531de7.gif)
 
 ## Directory structure
@@ -34,7 +34,28 @@ root
     |   |   .
 ```
 
+The core of the solver logic is in `GolombRuler.scala`. That is where we model the problem and kick off the CPLEX solve process. The `Server.scala` sets up a web server to take solve requests, and sets up a web socket to send search process updates out to the client. The `client` directory contains the React front-end which subscribes to this web socket, and provides a UI to send solution requests to the server.
+
 ## Development
+First, ensure that you have CPLEX 12.9 installed.
+
+Setup the backend
+```
+$ cd server
+$ sbt clean compile stage
+$ sbt run
+```
+
+Setup the client
+```
+$ cd client
+$ # see client/README.md
+$ yarn install
+$ yarn start
+```
+
+Navigate to the url provided by `yarn start`.
+
 ### Roadmap
 - [] Use better type safety for the messages passed to the client (still a few stringly typed things left)
 - [] Address potential race condition with setting `golombActor` after future resolution in Server.scala
