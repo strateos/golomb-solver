@@ -272,5 +272,5 @@ const TimeSeriesChart: React.SFC<
 }
 
 
-
+export { Ruler, TimeSeriesChart };
 export default App;
