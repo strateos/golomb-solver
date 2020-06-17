@@ -50,7 +50,7 @@ object Server extends App {
     // get the materialized queue so we can push into it
     var golombActor: ActorRef = null // TODO this is ugly, will cause race condition
     p.future.map { queue =>
-      golombActor = system.actorOf(Props(classOf[GolombRulerActor], queue))
+      golombActor = system.actorOf(Props(classOf[GolombRulerActor], Some(queue)))
     }
 
 

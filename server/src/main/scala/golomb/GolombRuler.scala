@@ -3,7 +3,7 @@ package golomb
 import akka.actor.Actor
 import akka.stream.scaladsl.SourceQueueWithComplete
 import ilog.concert._
-import ilog.cp.IloCP.{DoubleInfo, IntInfo, IntParam}
+import ilog.cp.IloCP.{IntInfo}
 import ilog.cp._
 import org.json4s.native.Serialization.write
 
@@ -34,29 +34,38 @@ object GolombRuler {
   // Messages sent over the result queue
   // TODO Better type safety. Also de-dup need of `name` field.
   type Solution = Array[Double]
+
   trait Message
-  case class QueueMessage(name: String)                         extends Message
-  case class NewOrderMessage(name: String, data: Double)        extends Message
-  case class ObjBoundMessage(name: String, data: Double)        extends Message
+
+  case class QueueMessage(name: String) extends Message
+
+  case class NewOrderMessage(name: String, data: Double) extends Message
+
+  case class ObjBoundMessage(name: String, data: Double) extends Message
+
   case class PeriodicMessage(name: String, data: CPInfoMetrics) extends Message
-  case class NewSolutionMessage(name: String, data: Solution)   extends Message
-  case class EndSearch(name: String)                            extends Message
-  case class FinalMessage(name: String, data: Boolean)          extends Message
-  case class GapMessage(name: String, data: Double)             extends Message
+
+  case class NewSolutionMessage(name: String, data: Solution) extends Message
+
+  case class EndSearch(name: String) extends Message
+
+  case class FinalMessage(name: String, data: Boolean) extends Message
+
+  case class GapMessage(name: String, data: Double) extends Message
 
   // CPLEX runtime metrics
   case class CPInfoMetrics(
-    numberOfChoicePoints: Int,
-    numberOfFails: Int,
-    numberOfBranches: Int,
-    memoryUsage: Int,
-    numberOfSolutions: Int
-  )
+                            numberOfChoicePoints: Int,
+                            numberOfFails: Int,
+                            numberOfBranches: Int,
+                            memoryUsage: Int,
+                            numberOfSolutions: Int
+                          )
 
   /**
    * Returns a data structure containing various information about a given model.
    *
-   * @param  model         The CP model to extract information from
+   * @param  model The CP model to extract information from
    * @return CPInfoMetrics Information about the CP model
    */
   def getModelMetrics(model: IloCP): CPInfoMetrics = {
@@ -88,9 +97,16 @@ object GolombRuler {
 
   /*
     @param resultsQueue Queue to push events to during solve
-    @param timeout Maximum time to spend in solve (seconds)
+    @param order        The number of marks
+    @param timeout      Maximum time to spend in solve (seconds)
+    @return             Array[Double] representing the list of mark positions
    */
-  def solve(resultsQueue: SourceQueueWithComplete[String], order: Int = 5, timeout: Int = 30): Unit = {
+  def solve(
+             resultsQueue: Option[SourceQueueWithComplete[String]],
+             order: Int = 5,
+             timeout: Int = 30
+           ): Option[Array[Double]] = {
+
     val model: IloCP = new IloCP()
     println(s"Solving for order $order...")
 
@@ -123,8 +139,9 @@ object GolombRuler {
     // TODO use getObjValue to get current objective value
     // TODO fetch cp metrics, like NumberOfSolutions, MemoryUsage, NumberOfFails, ...
     def postMessage(message: Message): Unit = {
-      resultsQueue.offer(write(message))
+      resultsQueue.foreach(_.offer(write(message)))
     }
+
     class SearchCallback extends IloCP.Callback {
       override def invoke(model: IloCP, i: Int): Unit = {
         if (i == IloCP.Callback.StartSearch) {
@@ -148,20 +165,24 @@ object GolombRuler {
     // Solve
     model.setParameter(IloCP.DoubleParam.TimeLimit, timeout)
     if (model.solve()) {
-      marks.map(model.getValue(_)).sorted.foreach(println) // print to sdout
+      val marksSorted = marks.map(model.getValue(_)).sorted
+      model.end()
       postMessage(FinalMessage(name = "Final", data = true)) // update client
+      Some(marksSorted)
     } else {
       postMessage(FinalMessage(name = "Final", data = false))
+      None
     }
-    model.end()
   }
 }
 
 case object GolombStateIdle
+
 case object GolombStateSolving
+
 case class StartSolve(order: Int, timeout: Int)
 
-class GolombRulerActor(resultsQueue: SourceQueueWithComplete[String]) extends Actor {
+class GolombRulerActor(resultsQueue: Option[SourceQueueWithComplete[String]]) extends Actor {
   var solving: Boolean = false
 
   def receive = {
