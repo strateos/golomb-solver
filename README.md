@@ -56,12 +56,5 @@ $ yarn start
 
 Navigate to the url provided by `yarn start`.
 
-### Roadmap
-- [] Use better type safety for the messages passed to the client (still a few stringly typed things left)
-- [] Address potential race condition with setting `golombActor` after future resolution in Server.scala
-- [] In Server.scala we need to ignore data coming from clients of the web socket (they just get messages pushed to them)
-- [] Support an option to require solutions are optimal rulers
-- [] Support an option to search for perfect rulers
-- [] Remove duplicate rulers based on reflection (symmetrical rulers should not show up as separate solutions)
-
+## Misc
 To include images in the READMEs we do this little hack of uploading the images to [this github issue](https://github.com/strateos/golomb-solver/issues/3) and then copying the url of the resource hosted by github.
