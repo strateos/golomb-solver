@@ -9,5 +9,6 @@ lazy val root = (project in file("."))
   .settings(
     name := "golomb",
     libraryDependencies += scalaTest % Test,
+    libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.5.6" % Test,
     libraryDependencies ++= Seq(akkaActor, akkaHttp, akkaStream, json4s)
   )

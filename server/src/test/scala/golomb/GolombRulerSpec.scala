@@ -1,6 +1,5 @@
 package golomb
 
-import akka.stream.javadsl.Sink
 import org.scalatest._
 
 class GolombRulerSpec extends FlatSpec with Matchers {
