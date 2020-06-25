@@ -2,6 +2,8 @@
 
 This is an example application for producing [Golomb Rulers](https://en.wikipedia.org/wiki/Golomb_ruler) using constraint programming (CP) via IBM CPLEX. Producing rulers is a fun way to learn CP (even if it isn't the most efficient method of producing them). IBM uses it as a training exercise [in their documentation](https://dataplatform.cloud.ibm.com/exchange/public/entry/view/f981e59a5122130858f8899a875e0b54) as well. It includes a web frontend that displays real time metrics of the solve process (see below).
 
+> NOTE: This repository isn not actively maintained. It is meant to be a specific example of using cplex 12.9 to build a small application.
+
 From [the Wikipedia page](https://en.wikipedia.org/wiki/Golomb_ruler)
 > In mathematics, a Golomb ruler is a set of marks at integer positions along an imaginary ruler such that no two pairs of marks are the same distance apart. The number of marks on the ruler is its order, and the largest distance between two of its marks is its length. Translation and reflection of a Golomb ruler are considered trivial, so the smallest mark is customarily put at 0 and the next mark at the smaller of its two possible values.
 
@@ -11,8 +13,11 @@ Here's an example of a Golomb Ruler of order 4 and length 6.
 
 ## Requirements
 - [CPLEX 12.9](https://www.ibm.com/support/knowledgecenter/SSSA5P_12.9.0/ilog.odms.studio.help/Optimization_Studio/topics/COS_home.html)
-- scala, sbt
-- node
+- Scala, Sbt
+- Node, NPM
+
+The backend is written in Scala. The frontend is a single page application which uses React 16, and listens over a web socket for
+solver events.
 
 ## Demo
 Below is an example of running the app with an order of `7`. It displays the current best found ruler, along with real time metrics like the current objective value, `NumberOfChoicePoints`, `NumberOfBranches`, `MemoryUsage` etc.
